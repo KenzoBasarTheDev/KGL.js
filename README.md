@@ -143,5 +143,5 @@ Happy coding!
 
 # CDN/LINKS
 
-[JSdelivr](https://cdn.jsdelivr.net/gh/KenzoBasarTheDev/KGL.js@master/kgl.js)
+[JSdelivr](https://cdn.jsdelivr.net/gh/KenzoBasarTheDev/KGL.js/kgl.js)
 [NPM](https://www.npmjs.com/package/kenzo-graphics-library-v2)
