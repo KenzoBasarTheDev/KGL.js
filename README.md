@@ -14,6 +14,18 @@ Kenzo Graphics Library (KGL) is a lightweight, math-based 2D and 3D engine for w
 
 ## Getting Started
 
+## Install via NPM
+```bash
+npm install kenzo-graphics-library-v2
+```
+
+## Install via CDN
+```html
+<script type="module">
+  import { Kgl } from 'https://cdn.jsdelivr.net/gh/KenzoBasarTheDev/KGL.js@master/kgl.js';
+</script>
+```
+
 ### HTML Setup
 
 ```html
