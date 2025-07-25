@@ -126,6 +126,7 @@ Happy coding!
 # Notes 
 
 This is not related to **kgl-jogl-js** or any other APIs 
-# CDN 
+# CDN/LINKS
 
 [JSdelivr](https://cdn.jsdelivr.net/gh/KenzoBasarTheDev/KGL.js@master/kgl.js)
+[NPM](https://www.npmjs.com/package/kenzo-graphics-library-v2)
