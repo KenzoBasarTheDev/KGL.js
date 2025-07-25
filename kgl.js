@@ -502,4 +502,63 @@ export class KGLconfig {
     return true;
   }
 }
+export class KglUtilities {
+  static WriteErrorsInCanvas = false;
+  static Opt = false;
 
+  static initSoundSystem() {
+    if (!window.AudioContext && !window.webkitAudioContext) {
+      console.warn("KGLUtilities: Web Audio API not supported.");
+      return;
+    }
+    KglUtilities.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  static playSound(url) {
+    if (!KglUtilities.audioCtx) {
+      KglUtilities.initSoundSystem();
+    }
+    fetch(url)
+      .then(res => res.arrayBuffer())
+      .then(data => KglUtilities.audioCtx.decodeAudioData(data))
+      .then(buffer => {
+        const source = KglUtilities.audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(KglUtilities.audioCtx.destination);
+        source.start(0);
+      })
+      .catch(err => {
+        KglUtilities._handleError("Audio Error: " + err.message);
+      });
+  }
+
+  static optimize3D(kglInstance) {
+    if (!KglUtilities.Opt || !kglInstance || !kglInstance.ctx) return;
+
+    // Basic optimization: reduce anti-aliasing artifacts with pixel snapping
+    kglInstance.ctx.imageSmoothingEnabled = false;
+
+    // Pre-render lighting vectors or any matrix caching logic (dummy example)
+    kglInstance.light = {
+      x: (kglInstance.light.x / 2).toFixed(3),
+      y: (kglInstance.light.y / 2).toFixed(3),
+      z: (kglInstance.light.z / 2).toFixed(3)
+    };
+  }
+
+  static writeErrorToCanvas(canvas, message) {
+    if (!KglUtilities.WriteErrorsInCanvas || !canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    ctx.font = '12px Tahoma';
+    ctx.fillStyle = '#f55';
+    ctx.fillText(message, 5, 15);
+  }
+
+  static _handleError(message) {
+    console.error("KGL Error:", message);
+    if (KglUtilities.WriteErrorsInCanvas && document.querySelector('canvas')) {
+      KglUtilities.writeErrorToCanvas(document.querySelector('canvas'), message);
+    }
+  }
+}
