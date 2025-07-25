@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>KGL Open World with Player</title>
+  <style>
+    body { margin: 0; background: #000; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="kgl" width="800" height="600"></canvas>
+<script type="module">
+import { Kgl } from 'https://cdn.jsdelivr.net/gh/KenzoBasarTheDev/KGL.js@master/kgl.js';
+
+const canvas = document.getElementById('kgl');
+const kgl = new Kgl(canvas);
+
+// World
+const world = [];
+const blockSpacing = 100;
+for (let x = -5; x <= 5; x++) {
+  for (let z = -5; z <= 5; z++) {
+    world.push({ x: x * blockSpacing, y: 0, z: z * blockSpacing });
+  }
+}
+
+// Faces
+const cubeFaces = [
+  [0, 1, 2], [0, 2, 3], // front
+  [1, 5, 6], [1, 6, 2], // right
+  [5, 4, 7], [5, 7, 6], // back
+  [4, 0, 3], [4, 3, 7], // left
+  [3, 2, 6], [3, 6, 7], // top
+  [4, 5, 1], [4, 1, 0]  // bottom
+];
+
+// Player
+let player = {
+  x: 0,
+  y: 300, // start above ground
+  z: 0,
+  velY: 0,
+  onGround: false
+};
+
+const gravity = 0.8;
+const jumpStrength = -12;
+const moveSpeed = 4;
+
+function getCubeVertices(pos) {
+  const s = 40;
+  const { x, y, z } = pos;
+  return [
+    { x: x - s, y: y - s, z: z - s },
+    { x: x + s, y: y - s, z: z - s },
+    { x: x + s, y: y + s, z: z - s },
+    { x: x - s, y: y + s, z: z - s },
+    { x: x - s, y: y - s, z: z + s },
+    { x: x + s, y: y - s, z: z + s },
+    { x: x + s, y: y + s, z: z + s },
+    { x: x - s, y: y + s, z: z + s }
+  ];
+}
+
+function loop() {
+  kgl.clear('#111');
+
+  // Movement
+  if (kgl.keys['w']) player.z -= moveSpeed;
+  if (kgl.keys['s']) player.z += moveSpeed;
+  if (kgl.keys['a']) player.x -= moveSpeed;
+  if (kgl.keys['d']) player.x += moveSpeed;
+  if (kgl.keys[' ']) {
+    if (player.onGround) {
+      player.velY = jumpStrength;
+      player.onGround = false;
+    }
+  }
+
+  // Gravity
+  player.velY += gravity;
+  player.y += player.velY;
+
+  // Simple ground check (y = 0)
+  if (player.y >= 0) {
+    player.y = 0;
+    player.velY = 0;
+    player.onGround = true;
+  }
+
+  // Camera angles
+  kgl.angleY = player.x * 0.005;
+  kgl.angleX = player.z * 0.005;
+
+  // Render only visible blocks (max 10)
+  let rendered = 0;
+  for (const block of world) {
+    const dx = block.x - player.x;
+    const dz = block.z - player.z;
+    const distSq = dx * dx + dz * dz;
+    if (distSq < 200000 && rendered < 10) {
+      const translated = {
+        x: block.x - player.x,
+        y: block.y - player.y,
+        z: block.z - player.z + 300 // move forward for projection
+      };
+      const verts = getCubeVertices(translated);
+      kgl.drawSolid(verts, cubeFaces, '#4cf');
+      rendered++;
+    }
+  }
+
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
