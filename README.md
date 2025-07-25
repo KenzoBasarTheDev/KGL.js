@@ -125,4 +125,5 @@ Happy coding!
 
 *Notes :*
 This is not related to **kgl-jogl-js** or any other APIs 
-
+CDN
+[JSdelivr](https://cdn.jsdelivr.net/gh/KenzoBasarTheDev/KGL.js@master/kgl.js)
