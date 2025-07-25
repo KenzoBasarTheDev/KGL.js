@@ -135,9 +135,12 @@ Explore the `KglUI`, `Kgl2D`, and `KglHTSTB` classes for ready-made UI and layou
 KGL is ideal for indie experiments, educational demos, and rapid prototyping. While it's not intended for complex or physics-heavy projects, it remains highly extensible for creative and compact visual interfaces.
 Happy coding!
 
-# Notes 
+# Important Notes 
 
-This is not related to **kgl-jogl-js** or any other APIs 
+- This is not related to **kgl-jogl-js** or any other APIs 
+- This is not fully tested, Bugs still remain.
+- The usage might be invalid. Usage is not tested
+
 # CDN/LINKS
 
 [JSdelivr](https://cdn.jsdelivr.net/gh/KenzoBasarTheDev/KGL.js@master/kgl.js)
