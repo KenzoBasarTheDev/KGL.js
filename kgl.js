@@ -562,3 +562,209 @@ export class KglUtilities {
     }
   }
 }
+export class KGLvoxel {
+  constructor(kgl, chunkSize = 16) {
+    this.kgl = kgl;
+    this.chunkSize = chunkSize;
+    this.voxelSize = 20;
+    this.chunks = new Map(); // Map<string, Voxel[]>
+  }
+
+  _getChunkKey(x, y, z) {
+    const cx = Math.floor(x / this.chunkSize);
+    const cy = Math.floor(y / this.chunkSize);
+    const cz = Math.floor(z / this.chunkSize);
+    return `${cx},${cy},${cz}`;
+  }
+
+  addVoxel(x, y, z, color = '#6cf') {
+    const key = this._getChunkKey(x, y, z);
+    if (!this.chunks.has(key)) this.chunks.set(key, []);
+    this.chunks.get(key).push({ x, y, z, color });
+  }
+
+  removeVoxel(x, y, z) {
+    const key = this._getChunkKey(x, y, z);
+    if (!this.chunks.has(key)) return;
+    const list = this.chunks.get(key);
+    this.chunks.set(key, list.filter(v => v.x !== x || v.y !== y || v.z !== z));
+  }
+
+  getVisibleChunkKeys(center, viewDistance = 2) {
+    const keys = [];
+    const baseX = Math.floor(center.x / this.chunkSize);
+    const baseY = Math.floor(center.y / this.chunkSize);
+    const baseZ = Math.floor(center.z / this.chunkSize);
+
+    for (let dx = -viewDistance; dx <= viewDistance; dx++) {
+      for (let dy = -viewDistance; dy <= viewDistance; dy++) {
+        for (let dz = -viewDistance; dz <= viewDistance; dz++) {
+          const key = `${baseX + dx},${baseY + dy},${baseZ + dz}`;
+          if (this.chunks.has(key)) {
+            keys.push(key);
+          }
+        }
+      }
+    }
+    return keys;
+  }
+
+  drawVisibleChunks(playerPos = { x: 0, y: 0, z: 0 }) {
+    const visibleKeys = this.getVisibleChunkKeys(playerPos);
+    for (const key of visibleKeys) {
+      const voxels = this.chunks.get(key);
+      for (const voxel of voxels) {
+        this._drawVoxelCube(voxel);
+      }
+    }
+  }
+
+  _drawVoxelCube({ x, y, z, color }) {
+    const s = this.voxelSize / 2;
+    const v = [
+      { x: x - s, y: y - s, z: z - s }, { x: x + s, y: y - s, z: z - s },
+      { x: x + s, y: y + s, z: z - s }, { x: x - s, y: y + s, z: z - s },
+      { x: x - s, y: y - s, z: z + s }, { x: x + s, y: y - s, z: z + s },
+      { x: x + s, y: y + s, z: z + s }, { x: x - s, y: y + s, z: z + s },
+    ];
+    const f = [
+      [0, 1, 2, 3], [4, 5, 6, 7], [0, 1, 5, 4],
+      [3, 2, 6, 7], [1, 2, 6, 5], [0, 3, 7, 4]
+    ];
+    this.kgl.drawSolid(v, f, color);
+  }
+
+  clearChunks() {
+    this.chunks.clear();
+  }
+
+  voxelCount() {
+    let total = 0;
+    for (const list of this.chunks.values()) {
+      total += list.length;
+    }
+    return total;
+  }
+}
+export class KGLentity {
+  constructor(kgl) {
+    this.kgl = kgl;
+    this.entities = [];
+  }
+
+  addEntity({ position = { x: 0, y: 0, z: 0 }, color = '#f55', model = null, behavior = null }) {
+    const entity = {
+      id: crypto.randomUUID(),
+      pos: position,
+      color,
+      model, // { vertices: [...], faces: [...] }
+      behavior, // function(entity, deltaTime)
+    };
+    this.entities.push(entity);
+    return entity.id;
+  }
+
+  removeEntityById(id) {
+    this.entities = this.entities.filter(e => e.id !== id);
+  }
+
+  update(deltaTime = 1 / 60) {
+    for (const entity of this.entities) {
+      if (typeof entity.behavior === 'function') {
+        entity.behavior(entity, deltaTime);
+      }
+    }
+  }
+
+  drawEntities() {
+    for (const entity of this.entities) {
+      if (entity.model) {
+        const offsetVerts = entity.model.vertices.map(v => ({
+          x: v.x + entity.pos.x,
+          y: v.y + entity.pos.y,
+          z: v.z + entity.pos.z
+        }));
+        this.kgl.drawSolid(offsetVerts, entity.model.faces, entity.color);
+      } else {
+        // fallback: draw small cube
+        const s = 10;
+        const v = [
+          { x: entity.pos.x - s, y: entity.pos.y - s, z: entity.pos.z - s },
+          { x: entity.pos.x + s, y: entity.pos.y - s, z: entity.pos.z - s },
+          { x: entity.pos.x + s, y: entity.pos.y + s, z: entity.pos.z - s },
+          { x: entity.pos.x - s, y: entity.pos.y + s, z: entity.pos.z - s },
+          { x: entity.pos.x - s, y: entity.pos.y - s, z: entity.pos.z + s },
+          { x: entity.pos.x + s, y: entity.pos.y - s, z: entity.pos.z + s },
+          { x: entity.pos.x + s, y: entity.pos.y + s, z: entity.pos.z + s },
+          { x: entity.pos.x - s, y: entity.pos.y + s, z: entity.pos.z + s },
+        ];
+        const f = [
+          [0, 1, 2, 3], [4, 5, 6, 7], [0, 1, 5, 4],
+          [3, 2, 6, 7], [1, 2, 6, 5], [0, 3, 7, 4]
+        ];
+        this.kgl.drawSolid(v, f, entity.color);
+      }
+    }
+  }
+
+  getEntityById(id) {
+    return this.entities.find(e => e.id === id);
+  }
+
+  clear() {
+    this.entities = [];
+  }
+
+  count() {
+    return this.entities.length;
+  }
+}
+export class KGLscene {
+  constructor(kgl) {
+    this.kgl = kgl;
+    this.scenes = new Map(); // Map<string, {onLoad, onUpdate, onDraw, onUnload}>
+    this.currentScene = null;
+    this.sceneData = {}; // Shared between scenes if needed
+  }
+
+  createScene(name, { onLoad = () => {}, onUpdate = () => {}, onDraw = () => {}, onUnload = () => {} } = {}) {
+    this.scenes.set(name, { onLoad, onUpdate, onDraw, onUnload });
+  }
+
+  switchScene(name) {
+    if (!this.scenes.has(name)) {
+      console.warn(`KGLscene: Scene "${name}" does not exist.`);
+      return;
+    }
+
+    if (this.currentScene && this.scenes.get(this.currentScene).onUnload) {
+      this.scenes.get(this.currentScene).onUnload(this.sceneData);
+    }
+
+    this.currentScene = name;
+    this.scenes.get(name).onLoad?.(this.sceneData);
+  }
+
+  update(deltaTime = 1 / 60) {
+    if (!this.currentScene) return;
+    const scene = this.scenes.get(this.currentScene);
+    scene.onUpdate?.(deltaTime, this.sceneData);
+  }
+
+  render() {
+    if (!this.currentScene) return;
+    const scene = this.scenes.get(this.currentScene);
+    scene.onDraw?.(this.kgl.ctx, this.sceneData);
+  }
+
+  deleteScene(name) {
+    if (this.currentScene === name) this.currentScene = null;
+    this.scenes.delete(name);
+  }
+
+  clearScenes() {
+    this.scenes.clear();
+    this.currentScene = null;
+  }
+}
+
