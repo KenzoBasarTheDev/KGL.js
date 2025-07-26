@@ -2,6 +2,9 @@
 
 Kenzo Graphics Library (KGL) is a lightweight, math-based 2D and 3D engine for web-based applications and games. Designed for speed, simplicity, and small-scale use, KGL enables fast prototyping and educational graphics applications in HTML environments without external dependencies.
 
+![NPM Downloads](https://img.shields.io/npm/dw/kenzo-graphics-library-v2?style=for-the-badge)
+📊 [View NPM Download Graph](https://npmcharts.com/compare/kenzo-graphics-library-v2)
+
 ## Key Features
 
 * 2D and 3D rendering via `<canvas>`
