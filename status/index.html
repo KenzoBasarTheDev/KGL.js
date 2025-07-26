@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>KGL Project Stats</title>
+  <style>
+    body {
+      background: #f4f4f4;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    .center-box {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      min-height: 100vh;
+      padding: 20px;
+      background-color: #ffffff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 800px;
+      margin: auto;
+      border-radius: 10px;
+    }
+    .section {
+      margin: 20px 0;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="center-box">
+    <h1>KGL Project Analytics</h1>
+
+    <!-- NPM Download Graph -->
+    <div class="section">
+      <h3>NPM Weekly Downloads</h3>
+      <img src="https://img.shields.io/npm/dw/kenzo-graphics-library-v2?label=Weekly%20Downloads&color=blue" alt="NPM Downloads">
+    </div>
+
+    <!-- Visitor Counter -->
+    <div class="section">
+      <h3>Website Visitors</h3>
+      <img src="https://hitwebcounter.com/counter/counter.php?page=1234567&style=0006&nbdigits=6&type=page&initCount=0" title="Visitor counter" Alt="Web Counter" border="0">
+    </div>
+
+    <!-- Popularity Timeline Chart -->
+    <div class="section">
+      <h3>Popularity Timeline (Demo)</h3>
+      <canvas id="popularityChart" width="600" height="200"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('popularityChart');
+    const ctx = canvas.getContext('2d');
+    const points = [10, 30, 50, 80, 100, 75, 120];
+    ctx.strokeStyle = '#007acc';
+    ctx.beginPath();
+    ctx.moveTo(0, 200 - points[0]);
+    points.forEach((val, idx) => {
+      ctx.lineTo(idx * 100, 200 - val);
+    });
+    ctx.stroke();
+  </script>
+</body>
+</html>

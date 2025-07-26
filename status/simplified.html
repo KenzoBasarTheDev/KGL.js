@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>KGL Status</title>
+  <script>
+    async function fetchDownloads() {
+      const res = await fetch("https://api.npmjs.org/downloads/point/last-month/kenzo-graphics-library-v2");
+      const data = await res.json();
+      document.getElementById("downloads").textContent = data.downloads + " downloads last month";
+    }
+    window.onload = fetchDownloads;
+  </script>
+</head>
+<body>
+  <div align="center">
+    <h1>KGL v2 Status (Simplified)</h1>
+    <hr>
+    <p id="downloads">Loading...</p>
+  </div>
+</body>
+</html>
