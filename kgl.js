@@ -768,3 +768,136 @@ export class KGLscene {
   }
 }
 
+export class KGLnoise {
+  constructor(seed = 42) {
+    this.seed = seed;
+    this.perm = new Uint8Array(512);
+    this._initPerm();
+  }
+
+  _initPerm() {
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    let rand = this.seed;
+    for (let i = 255; i > 0; i--) {
+      rand = (rand * 1664525 + 1013904223) >>> 0;
+      const j = rand % (i + 1);
+      [p[i], p[j]] = [p[j], p[i]];
+    }
+    for (let i = 0; i < 512; i++) {
+      this.perm[i] = p[i & 255];
+    }
+  }
+
+  fade(t) {
+    return t * t * t * (t * (t * 6 - 15) + 10);
+  }
+
+  lerp(t, a, b) {
+    return a + t * (b - a);
+  }
+
+  grad(hash, x, y) {
+    const h = hash & 3;
+    return ((h & 1) ? -x : x) + ((h & 2) ? -y : y);
+  }
+
+  perlin(x, y = 0) {
+    const X = Math.floor(x) & 255;
+    const Y = Math.floor(y) & 255;
+
+    x -= Math.floor(x);
+    y -= Math.floor(y);
+
+    const u = this.fade(x);
+    const v = this.fade(y);
+
+    const aa = this.perm[X + this.perm[Y]];
+    const ab = this.perm[X + this.perm[Y + 1]];
+    const ba = this.perm[X + 1 + this.perm[Y]];
+    const bb = this.perm[X + 1 + this.perm[Y + 1]];
+
+    const gradAA = this.grad(aa, x, y);
+    const gradBA = this.grad(ba, x - 1, y);
+    const gradAB = this.grad(ab, x, y - 1);
+    const gradBB = this.grad(bb, x - 1, y - 1);
+
+    const lerpX1 = this.lerp(u, gradAA, gradBA);
+    const lerpX2 = this.lerp(u, gradAB, gradBB);
+
+    return (this.lerp(v, lerpX1, lerpX2) + 1) / 2;
+  }
+
+  normal(x, y = 0) {
+    // Simple pseudo-random noise
+    const n = Math.sin(x * 12.9898 + y * 78.233 + this.seed) * 43758.5453;
+    return (n - Math.floor(n));
+  }
+
+  kenzo(x, y = 0) {
+    // Mixed: blend Perlin and Normal
+    const p = this.perlin(x, y);
+    const n = this.normal(x, y);
+    return (p * 0.6 + n * 0.4);
+  }
+}
+
+export class KGLtcp {
+  constructor(serverUrl) {
+    this.serverUrl = serverUrl;
+    this.socket = null;
+    this.isConnected = false;
+    this.onMessageHandlers = [];
+    this.onConnect = () => {};
+    this.onDisconnect = () => {};
+  }
+
+  connect() {
+    this.socket = new WebSocket(this.serverUrl);
+
+    this.socket.addEventListener('open', () => {
+      this.isConnected = true;
+      console.log("KGLtcp: Connected to", this.serverUrl);
+      this.onConnect();
+    });
+
+    this.socket.addEventListener('message', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        for (const handler of this.onMessageHandlers) {
+          handler(data);
+        }
+      } catch (err) {
+        console.warn("KGLtcp: Invalid JSON received", err);
+      }
+    });
+
+    this.socket.addEventListener('close', () => {
+      this.isConnected = false;
+      console.warn("KGLtcp: Disconnected from server");
+      this.onDisconnect();
+    });
+
+    this.socket.addEventListener('error', (err) => {
+      console.error("KGLtcp: Error", err);
+    });
+  }
+
+  send(data) {
+    if (this.isConnected && this.socket.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify(data));
+    } else {
+      console.warn("KGLtcp: Not connected, send failed");
+    }
+  }
+
+  onMessage(callback) {
+    this.onMessageHandlers.push(callback);
+  }
+
+  close() {
+    if (this.socket) {
+      this.socket.close();
+    }
+  }
+}
