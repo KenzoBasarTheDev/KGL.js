@@ -901,3 +901,114 @@ export class KGLtcp {
     }
   }
 }
+
+// KGML - KGL Modification Loader
+// Allows runtime injection of modules, extensions, or patches into the KGL ecosystem
+export class KGML {
+  constructor() {
+    this.mods = new Map();
+    this.loadQueue = [];
+    this.loaded = false;
+  }
+
+  registerMod(name, mod) {
+    if (this.mods.has(name)) {
+      console.warn(`KGML: Mod '${name}' already registered.`);
+      return false;
+    }
+    if (typeof mod.init !== 'function') {
+      console.error(`KGML: Mod '${name}' must have an init() function.`);
+      return false;
+    }
+    this.mods.set(name, mod);
+    if (this.loaded) {
+      mod.init();
+    } else {
+      this.loadQueue.push(mod);
+    }
+    return true;
+  }
+
+  unregisterMod(name) {
+    if (this.mods.has(name)) {
+      const mod = this.mods.get(name);
+      if (typeof mod.destroy === 'function') mod.destroy();
+      this.mods.delete(name);
+      return true;
+    }
+    return false;
+  }
+
+  initAll() {
+    this.loaded = true;
+    for (const mod of this.mods.values()) {
+      mod.init();
+    }
+    while (this.loadQueue.length > 0) {
+      const mod = this.loadQueue.shift();
+      try {
+        mod.init();
+      } catch (e) {
+        console.error(`KGML: Failed to load mod:`, e);
+      }
+    }
+  }
+
+  injectTo(target, injectFn) {
+    try {
+      injectFn(target);
+    } catch (e) {
+      console.warn("KGML: Injection failed", e);
+    }
+  }
+
+  listMods() {
+    return Array.from(this.mods.keys());
+  }
+
+  getMod(name) {
+    return this.mods.get(name);
+  }
+}
+export class KGLconsole {
+  static ANSI = {
+    reset: '\x1b[0m',
+    black: '\x1b[30m',
+    red: '\x1b[31m',
+    green: '\x1b[32m',
+    yellow: '\x1b[33m',
+    blue: '\x1b[34m',
+    magenta: '\x1b[35m',
+    cyan: '\x1b[36m',
+    white: '\x1b[37m',
+    gray: '\x1b[90m',
+  };
+
+  static print = {
+    color(colorName, text) {
+      const code = KGLconsole.ANSI[colorName.toLowerCase()];
+      if (!code) {
+        console.warn(`KGLconsole: Unknown color '${colorName}'`);
+        console.log(text);
+        return;
+      }
+      console.log(`${code}%s${KGLconsole.ANSI.reset}`, text);
+    },
+
+    info(text) {
+      console.log(`${KGLconsole.ANSI.cyan}%s${KGLconsole.ANSI.reset}`, text);
+    },
+
+    warn(text) {
+      console.warn(`${KGLconsole.ANSI.yellow}%s${KGLconsole.ANSI.reset}`, text);
+    },
+
+    error(text) {
+      console.error(`${KGLconsole.ANSI.red}%s${KGLconsole.ANSI.reset}`, text);
+    },
+
+    success(text) {
+      console.log(`${KGLconsole.ANSI.green}%s${KGLconsole.ANSI.reset}`, text);
+    }
+  };
+}
